@@ -1,0 +1,49 @@
+svm_dask_hw4.py 
+  import pandas as pd
+import time
+import matplotlib.pyplot as plt
+from sklearn.svm import SVR
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# Load dataset
+df = pd.read_csv("asthma_data.csv")
+
+# Features and target
+X = df[["ED_visits", "ED_hosp", "Asthma_use", "Total_members"]]
+y = df["UC_visits"]
+
+# Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+# Scale
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# -------- WITHOUT DASK --------
+model = SVR(kernel="rbf")
+
+start = time.time()
+model.fit(X_train, y_train)
+end = time.time()
+
+runtime = end - start
+print("Runtime (No Dask):", runtime)
+
+# -------- WITH DASK --------
+from dask.distributed import Client
+client = Client()
+
+start_dask = time.time()
+model.fit(X_train, y_train)
+end_dask = time.time()
+
+runtime_dask = end_dask - start_dask
+print("Runtime (Dask):", runtime_dask)
+
+# -------- GRAPH --------
+plt.bar(["No Dask", "Dask"], [runtime, runtime_dask])
+plt.ylabel("Time (seconds)")
+plt.title("SVM Runtime Comparison")
+plt.show()
